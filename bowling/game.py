@@ -1,6 +1,8 @@
 FRAMES_PER_GAME = 10
 REGULAR_FRAMES = FRAMES_PER_GAME - 1
 ALL_PINS = 10
+STRIKE_ROLLS = 1
+OPEN_OR_SPARE_ROLLS = 2
 
 
 class Game:
@@ -14,28 +16,37 @@ class Game:
         total = 0
         roll_index = 0
 
-        def pins_after(offset):
-            return self._rolls[roll_index + offset]
-
         for _ in range(REGULAR_FRAMES):
-            is_strike = pins_after(0) == ALL_PINS
-            if is_strike:
-                strike_bonus = pins_after(1) + pins_after(2)
-                total += ALL_PINS + strike_bonus
-                roll_index += 1
-                continue
-
-            frame_pins = pins_after(0) + pins_after(1)
-            is_spare = frame_pins == ALL_PINS
-            if is_spare:
-                spare_bonus = pins_after(2)
-                total += ALL_PINS + spare_bonus
-            else:
-                total += frame_pins
-            roll_index += 2
+            frame_score, rolls_used = self._score_frame(roll_index)
+            total += frame_score
+            roll_index += rolls_used
 
         total += self._score_last_frame(roll_index)
         return total
+
+    def _score_frame(self, roll_index):
+        if self._is_strike(roll_index):
+            return self._score_strike(roll_index), STRIKE_ROLLS
+
+        if self._is_spare(roll_index):
+            return self._score_spare(roll_index), OPEN_OR_SPARE_ROLLS
+
+        return self._score_open_frame(roll_index), OPEN_OR_SPARE_ROLLS
+
+    def _is_strike(self, roll_index):
+        return self._rolls[roll_index] == ALL_PINS
+
+    def _is_spare(self, roll_index):
+        return self._rolls[roll_index] + self._rolls[roll_index + 1] == ALL_PINS
+
+    def _score_strike(self, roll_index):
+        return ALL_PINS + self._rolls[roll_index + 1] + self._rolls[roll_index + 2]
+
+    def _score_spare(self, roll_index):
+        return ALL_PINS + self._rolls[roll_index + 2]
+
+    def _score_open_frame(self, roll_index):
+        return self._rolls[roll_index] + self._rolls[roll_index + 1]
 
     def _score_last_frame(self, roll_index):
         # 10번 프레임은 스트라이크/스페어 시 최대 3회까지 투구가 허용되며,
