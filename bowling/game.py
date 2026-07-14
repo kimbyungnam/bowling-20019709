@@ -1,4 +1,5 @@
 FRAMES_PER_GAME = 10
+REGULAR_FRAMES = FRAMES_PER_GAME - 1
 ALL_PINS = 10
 
 
@@ -16,7 +17,7 @@ class Game:
         def pins_after(offset):
             return self._rolls[roll_index + offset]
 
-        for _ in range(FRAMES_PER_GAME):
+        for _ in range(REGULAR_FRAMES):
             is_strike = pins_after(0) == ALL_PINS
             if is_strike:
                 strike_bonus = pins_after(1) + pins_after(2)
@@ -33,4 +34,11 @@ class Game:
                 total += frame_pins
             roll_index += 2
 
+        total += self._score_last_frame(roll_index)
         return total
+
+    def _score_last_frame(self, roll_index):
+        # 10번 프레임은 스트라이크/스페어 시 최대 3회까지 투구가 허용되며,
+        # 그 프레임에서 던진 핀 수의 합이 곧 프레임 점수다 (미래 프레임에서
+        # 보너스를 빌려올 필요가 없다).
+        return sum(self._rolls[roll_index:])
